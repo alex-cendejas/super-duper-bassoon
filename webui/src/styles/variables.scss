@@ -1,0 +1,61 @@
+:root {
+  // Colors - Canonical brand colors
+  --color-primary: #e95420;
+  --color-secondary: #0068d6;
+  --color-success: #2ba700;
+  --color-warning: #f58700;
+  --color-error: #c7162b;
+
+  // Neutral colors
+  --color-text: #111111;
+  --color-text-secondary: #666666;
+  --color-bg: #f7f7f7;
+  --color-bg-light: #ffffff;
+  --color-bg-dark: #333333;
+  --color-border: #cdcdd4;
+  --color-hover: #f2f2f2;
+
+  // Spacing scale - 8px grid
+  --space-0: 0.25rem; // 4px
+  --space-1: 0.5rem; // 8px
+  --space-2: 1rem; // 16px
+  --space-3: 1.5rem; // 24px
+  --space-4: 2rem; // 32px
+  --space-5: 3rem; // 48px
+  --space-6: 4rem; // 64px
+
+  // Typography
+  --font-family: 'Ubuntu', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-size-base: 1rem;
+  --font-size-small: 0.875rem;
+  --font-size-large: 1.125rem;
+  --font-weight-regular: 400;
+  --font-weight-bold: 700;
+
+  // Border radius
+  --border-radius-small: 2px;
+  --border-radius-base: 4px;
+  --border-radius-large: 8px;
+
+  // Shadows
+  --shadow-small: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-medium: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-large: 0 10px 25px rgba(0, 0, 0, 0.15);
+
+  // Transitions
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.2s ease;
+  --transition-slow: 0.3s ease;
+}
+
+// Theme toggle support (future)
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-text: #ffffff;
+    --color-text-secondary: #cccccc;
+    --color-bg: #1a1a1a;
+    --color-bg-light: #2a2a2a;
+    --color-border: #444444;
+    --color-hover: #333333;
+  }
+}
