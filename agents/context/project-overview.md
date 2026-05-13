@@ -1,75 +1,141 @@
-Project super-duper-bassoon: Automation Engine PoC
+# Project super-duper-bassoon: Automation Engine PoC
 
-Project super-duper-bassoon is a lightweight automation workflow engine designed to manage remote devices (toy clients) via asynchronous messaging. It focuses on safety rails, specifically loop detection, health-based circuit breaking, and permanent client banning.
-Architectural Overview
+A lightweight workflow automation engine for managing remote devices (toy clients) via asynchronous messaging. The PoC validates three core safety mechanisms: **loop detection** (prevents clients from re-entering the same workflow), **permanent banning** (isolates problem clients), and **circuit breaking** (stops cascading failures).
 
-super-duper-bassoon follows a Hub-and-Spoke architecture using NATS/MQTT as the central message bus.
+## Architecture Overview
 
-    Server: The central authority managing state, scheduling, and safety logic.
+Hub-and-spoke pattern with internal service coordination:
 
-    Broker: Handles asynchronous communication via orbit/cmd/{id} and orbit/results.
+- **Server (Go all-in-one binary):** Orchestration, safety logic, state management, REST API. Internal services communicate via Go channels.
+- **NATS Broker:** Asynchronous messaging between server and clients.
+- **SQLite Database:** Persistent storage (client metadata, workflow definitions, run history, bans, loop detection records).
+- **Super-Client (toy simulation):** Single binary spawning multiple inner clients, each with simulated state and chaos behavior.
 
-    Toy Clients: State-aware agents that simulate real-world execution, random failure modes, and spontaneous state drift.
+## Core Concepts
 
-    Database: SQLite for persistent storage of client metadata, workflow definitions, and run history.
+### Run
+One dispatch cycle from the server to all matching clients at a moment in time. Health is calculated per-run in real-time (does not wait for completion).
 
-Core Services
-1. Messaging and Protocol
+### Health
+- **Run Health:** Per-run metrics (total clients, success %, fail %, pending %).
+- **Type Health:** Aggregated across last n runs of a workflow_type, used by circuit breaker.
 
-    Standard Payload: JSON containing run_id, wf_id, activity, and params.
+### Workflow Definition
+- **Trigger:** Scheduled (cron), event-driven (on another workflow's completion), or state change (on client state event).
+- **Target:** Filter expression (e.g., `os == 'linux' AND state.config_version < 2`).
+- **Activity:** One of: `reboot`, `install package`, `upgrade package`, `remove package`, `apply config`, `validate config`, `run script` (with parameters inline).
+- **Thresholds:** `success_threshold` (circuit breaker trigger), `loop_threshold` (time window for loop detection).
+- **Timeout:** Per-workflow activity timeout.
+- **State:** `active` flag (set to false by circuit breaker on deactivation).
 
-    Result Payload: Includes status (success, fail, or error), the client's updated inner_state, and error_msg.
+### Activity Semantics
+- **Package operations:** Atomic (all-or-nothing).
+- **Validate config:** Client confirms current config matches expected state.
+- **Run script:** Returns exit code and stdout/stderr in result payload.
 
-    Activity Types: reboot, install package, upgrade package, remove package, apply config, validate config, and run script.
+## Services
 
-2. Workflow and Orchestration Service
+### 1. Workflow & Orchestration Service
+Executes workflows on trigger. Takes a static snapshot of matching clients at trigger time. Generates unique `run_id` per run and dispatches commands. Chains workflows via event-driven triggers.
 
-    Workflow Definition: Targets a group via filter, specifies an activity, and sets success_threshold and loop_threshold.
+### 2. Dynamic Grouping Service
+Evaluates filter expressions against client metadata + state. Resolves to concrete client list only at workflow initiation.
 
-    Triggers: Scheduled (cron-like) or Event-driven (chained to another workflow's completion).
+### 3. Loop Detection & Ban Service
+Processes result messages to detect loops. **Detection:** Client reports result for run_id N of workflow_type X while still within loop_threshold of run_id N-1 for same workflow_type. **Action:** Immediately ban client from that workflow_type (no more dispatches). Trigger alert. Persist ban record with run_id and result evidence. **Recovery:** Manual admin unban only.
 
-    Execution: On trigger, the service takes a Static Snapshot of the fleet matching the filter. It generates a unique run_id and dispatches commands to each client.
+### 4. Health Monitoring Service
+Streams health metrics per run and aggregates across last n runs per workflow_type.
 
-3. Dynamic Grouping Service
+### 5. Circuit Breaker Service
+Monitors aggregated health. When workflow_type health falls below success_threshold, deactivate workflow (set active=false, stop new dispatches) and alert.
 
-    Evaluates client metadata and inner state against workflow filters. Example: os == 'linux' AND state.config_version < 2.
+### 6. API Service
+REST API for: trigger workflow, query clients, query runs, query health, unban client, manage workflow state.
 
-    Resolves filters into a concrete list of client_ids only at the moment of workflow initiation.
+## Message Protocol
 
-4. Loop-Detection and Ban Service
+### Dispatch (server → client)
+```json
+{
+  "run_id": "string",
+  "wf_id": "string",
+  "activity": "string",
+  "params": {}
+}
+```
 
-    Concurrency Guard: Tracks client_id, workflow_type, and timestamp for every dispatch.
+### Result (client → server)
+```json
+{
+  "run_id": "string",
+  "wf_id": "string",
+  "status": "success|fail|error",
+  "inner_state": {},
+  "error_msg": "string?",
+  "payload": {}
+}
+```
 
-    Violation: If a client enters a second run_id for the same workflow_type within the loop_threshold window, it is flagged as a loop.
+Repeated results with same (client_id, wf_id, run_id) are idempotent. Malformed results are ignored.
 
-    The Ban: Banned clients are permanently excluded from that specific workflow_type. This state is persisted in the DB and requires a manual administrative Unban command to clear.
+## Persistence
 
-5. Health Monitoring and Circuit Breaker
+### Client Metadata
+- `client_id`, `os`, `labels` (for grouping), `inner_state` (packages, config version, power state).
 
-    Run Health: Tracks real-time status including Total, Success percentage, Fail percentage, and Pending percentage.
+### Workflows
+- Definition, active flag, trigger config, activity, thresholds, timeout.
 
-    Type Health: Aggregates the last n runs of a workflow_type.
+### Run History
+- `run_id`, `wf_id`, timestamp, list of participating clients, health stats, completion status.
 
-    Circuit Breaker: If the aggregated success rate falls below the workflow's success_threshold, the workflow is Deactivated (Active=False) and an alert is raised.
+### Loop/Ban Records
+- `client_id`, `workflow_type`, `run_id` (evidence of loop), `result` (activity result that triggered), `banned_at`, `banned_until` (null = permanent).
 
-6. The Toy Client (Simulation)
+All records are immutable audit trail. No pruning.
 
-    Internal State: Manages a virtual manifest of packages, config versions, and power state.
+## Toy Client Behavior
 
-    Chaos Engine: Randomly determines activity outcome. On failure, the client may enter an ERROR state.
+Internal state machine with packages, config versions, power states. Chaos simulation:
+- **10% of activities fail randomly.**
+- **3% of failures cripple the client.**
+- **Crippled state:** Client randomly decides to either fail all activities of a certain type OR stop responding catastrophically.
+- **Crippling persists until reboot activity succeeds.**
+- **Spontaneous drift:** 5-10% chance per run that client modifies its own state independently (simulates manual changes).
 
-    Spontaneous Drift: Occasionally, the client will randomly modify its own state (e.g., removing a package or changing a config version) independent of server commands. This simulates "shadow IT" or local manual changes.
+## Safety Mechanisms Working Together
 
-    Impact: While crippled, package and config activities fail automatically; only reboot or run script can restore functionality.
+1. **Loop Detection → Banning:** Client loops (enters run N while still in run N-1), server detects via result, immediately bans, alerts. Prevents infinite retry cycles.
+2. **Circuit Breaking:** Workflow degrades (success % drops), server deactivates workflow, alerts. Prevents cascading damage across all clients.
+3. **Banned Clients in Health:** Banned clients excluded from run totals (don't poison health calculation), but their completed activities still persisted (forensics).
 
-Safety Scenarios
+## Implementation Approach
 
-    Rapid Retriggering: Handled by the Loop Detector via a Permanent Client Ban.
+**Phase 1 (Core):** Build toy client with NATS comms → server core (loop/ban + circuit logic) with NATS comms → integration tests.
 
-    Mass Client Failure: Handled by the Circuit Breaker via Deactivating the Workflow Type.
+**Phase 2 (Polish):** Dynamic grouping, health aggregation, REST API.
 
-    Client Logic Lock: Handled by the Toy Client (Chaos) by entering a Crippled State.
+**Phase 3 (Optional):** Web UI.
 
-    Stale Targets: Handled by the Dynamic Grouper using a Static Snapshot at the time of the trigger.
+## Configuration
 
-    Configuration Drift: Detected by the Dynamic Grouper during the next workflow run via the Spontaneous Drift feature.
+Environment variables only. No config files. Examples: `NATS_URL`, `DB_PATH`, `LOOP_THRESHOLD_MS`, `SUCCESS_THRESHOLD`, `HEALTH_WINDOW_SIZE`.
+
+## Error Handling
+
+- Malformed results: ignored (idempotent).
+- DB unavailable: graceful shutdown with error.
+- NATS unavailable: graceful shutdown with error.
+- Client sends stale result (run_id doesn't exist): ignored.
+
+## Success Criteria
+
+**Phase 1 validation:**
+1. Loop detection works: Client loops, gets banned, no further dispatches.
+2. Circuit breaker works: Health drops, workflow deactivates.
+3. Bans persist: Banned client stays banned across restarts.
+4. Unban works: Admin unbans, client dispatchable again.
+5. Toy client chaos: 10% failures, 3% crippling, reboot recovery.
+
+**Phase 2 validation:** Dynamic grouping accuracy, health aggregation correctness, full REST API.
