@@ -171,6 +171,11 @@ body {
   td {
     padding: var(--space-1);
     border-bottom: 1px solid var(--color-border);
+
+    // Keep action buttons from touching each other in table cells
+    .p-button + .p-button {
+      margin-left: var(--space-1);
+    }
   }
 
   tr:hover {
@@ -267,32 +272,65 @@ body {
 }
 
 .p-button {
-  padding: var(--space-1) var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-0);
+  padding: 0.5rem 1.25rem;
   border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border-radius: 2px;
   cursor: pointer;
+  font-family: var(--font-family);
   font-size: 1rem;
-  transition: all 0.2s ease;
+  font-weight: var(--font-weight-regular);
+  line-height: 1.5;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
 
-  &.p-button--base {
-    background-color: white;
-    color: var(--color-text);
-
-    &:hover {
-      background-color: var(--color-bg-light);
-    }
+  &:focus-visible {
+    outline: 3px solid #0068d6;
+    outline-offset: 2px;
   }
 
+  // Vanilla/Canonical default (neutral)
+  background-color: #ffffff;
+  color: var(--color-text);
+
+  &:hover {
+    background-color: #f2f2f2;
+    border-color: #999;
+  }
+
+  // Positive — green, primary action
   &.p-button--positive {
     background-color: #2ba700;
-    color: white;
     border-color: #2ba700;
+    color: #ffffff;
 
     &:hover {
       background-color: #1e7a00;
+      border-color: #1e7a00;
     }
   }
 
+  // Base — white with border (secondary action)
+  &.p-button--base {
+    background-color: #ffffff;
+    border-color: var(--color-border);
+    color: var(--color-text);
+
+    &:hover {
+      background-color: #f2f2f2;
+      border-color: #999;
+    }
+  }
+
+  // Neutral — light background
   &.p-button--neutral {
     background-color: var(--color-bg-light);
     color: var(--color-text);
@@ -302,12 +340,26 @@ body {
     }
   }
 
+  // Negative — red, destructive action
+  &.p-button--negative {
+    background-color: #c7162b;
+    border-color: #c7162b;
+    color: #ffffff;
+
+    &:hover {
+      background-color: #9e1122;
+      border-color: #9e1122;
+    }
+  }
+
+  // Link style — minimal, inline text action
   &.p-button--link {
     background: none;
     border: none;
     color: #0068d6;
     padding: 0;
     cursor: pointer;
+    font-weight: var(--font-weight-regular);
     text-decoration: underline;
 
     &:hover {
@@ -315,10 +367,17 @@ body {
     }
   }
 
+  // Small size variant for use inside tables / tight layouts
+  &.p-button--small {
+    padding: 0.25rem 0.75rem;
+    font-size: var(--font-size-small);
+  }
+
   &.is-disabled,
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    pointer-events: none;
   }
 }
 

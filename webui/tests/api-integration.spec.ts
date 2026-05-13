@@ -1,5 +1,73 @@
 import { test, expect } from '@playwright/test';
 
+test.describe('API URL configuration (regression: hostname vs port detection)', () => {
+  test('dev server (port 5173) should send API requests to localhost:8080', async ({
+    page,
+    context,
+  }) => {
+    // This test verifies that on the Vite dev server the app uses the absolute
+    // backend URL (http://localhost:8080/api/…) rather than relative paths.
+    const capturedUrls: string[] = [];
+    await context.route('**', (route) => {
+      const url = route.request().url();
+      if (url.includes('/api/')) capturedUrls.push(url);
+      route.continue();
+    });
+
+    await page.goto('http://localhost:5173/#/workflows');
+    await page.waitForTimeout(1200);
+
+    // At least one API call must have been made to localhost:8080.
+    const hasDevUrl = capturedUrls.some((u) => u.startsWith('http://localhost:8080/api/'));
+    expect(hasDevUrl).toBe(true);
+  });
+
+  test('non-dev port should send API requests using relative paths (no localhost:8080)', async ({
+    browser,
+  }) => {
+    // Simulate the Docker/nginx scenario where the app is served at port 3000.
+    // In that environment window.location.port is '3000', so isDev=false and
+    // apiBaseUrl should be '' (relative paths served via the nginx /api proxy).
+    const context = await browser.newContext();
+    const page = await context.newPage();
+
+    // Override window.location.port BEFORE the app's module scripts evaluate.
+    await page.addInitScript(() => {
+      try {
+        Object.defineProperty(window, 'location', {
+          get() {
+            return new Proxy(location, {
+              get(target, prop: string) {
+                if (prop === 'port') return '3000';
+                const val = Reflect.get(target, prop, target);
+                return typeof val === 'function' ? val.bind(target) : val;
+              },
+            });
+          },
+          configurable: true,
+        });
+      } catch {
+        // If the browser prevents redefining location, skip silently.
+      }
+    });
+
+    const capturedUrls: string[] = [];
+    await context.route('**/api/**', (route) => {
+      capturedUrls.push(route.request().url());
+      route.abort('failed'); // abort so the missing server doesn't hang the test
+    });
+
+    await page.goto('http://localhost:5173/#/workflows');
+    await page.waitForTimeout(1200);
+
+    // No call should have gone directly to port 8080.
+    const hasDirectBackendCall = capturedUrls.some((u) => u.includes(':8080/api/'));
+    expect(hasDirectBackendCall).toBe(false);
+
+    await context.close();
+  });
+});
+
 test.describe('API Integration', () => {
   test('should make GET request to /api/workflows', async ({ page, context }) => {
     let apiCallMade = false;

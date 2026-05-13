@@ -61,8 +61,8 @@ export function WorkflowsPage(): HTMLElement {
             <td>${wf.active ? '<span class="p-badge--positive">Active</span>' : '<span class="p-badge--neutral">Inactive</span>'}</td>
             <td>${formatDate(wf.created_at)}</td>
             <td>
-              <button class="p-button--link view-btn" data-id="${wf.id}">View</button>
-              <button class="p-button--link trigger-btn" data-id="${wf.id}">Trigger</button>
+              <button class="p-button p-button--base p-button--small view-btn" data-id="${wf.id}">View</button>
+              <button class="p-button p-button--positive p-button--small trigger-btn" data-id="${wf.id}">Trigger</button>
             </td>
           </tr>
         `

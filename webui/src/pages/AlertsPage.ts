@@ -57,7 +57,7 @@ export function AlertsPage(): HTMLElement {
             <td>${alert.type}</td>
             <td>${alert.message.substring(0, 50)}...</td>
             <td>
-              <button class="p-button--link detail-btn" data-id="${alert.id}">View</button>
+              <button class="p-button p-button--base p-button--small detail-btn" data-id="${alert.id}">View</button>
             </td>
           </tr>
         `

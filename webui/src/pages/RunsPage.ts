@@ -54,7 +54,7 @@ export function RunsPage(): HTMLElement {
             <td><span class="p-badge">${run.state}</span></td>
             <td>${formatPercentage(run.health.success_percentage)}</td>
             <td>
-              <button class="p-button--link details-btn" data-id="${run.id}">Details</button>
+              <button class="p-button p-button--base p-button--small details-btn" data-id="${run.id}">Details</button>
             </td>
           </tr>
         `

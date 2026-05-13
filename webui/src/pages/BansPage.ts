@@ -58,8 +58,8 @@ export function BansPage(): HTMLElement {
             <td>${formatDate(ban.banned_at)}</td>
             <td>${ban.active ? '<span class="p-badge--negative">Active</span>' : '<span class="p-badge--neutral">Expired</span>'}</td>
             <td>
-              <button class="p-button--link detail-btn" data-id="${ban.client_id}">Details</button>
-              ${ban.active ? '<button class="p-button--link unban-btn" data-id="' + ban.client_id + '">Unban</button>' : ''}
+              <button class="p-button p-button--base p-button--small detail-btn" data-id="${ban.client_id}">Details</button>
+              ${ban.active ? '<button class="p-button p-button--negative p-button--small unban-btn" data-id="' + ban.client_id + '">Unban</button>' : ''}
             </td>
           </tr>
         `

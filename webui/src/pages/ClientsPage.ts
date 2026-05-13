@@ -56,7 +56,7 @@ export function ClientsPage(): HTMLElement {
             <td>${client.active ? '<span class="p-badge--positive">Active</span>' : '<span class="p-badge--neutral">Inactive</span>'}</td>
             <td>${formatDate(client.last_seen)}</td>
             <td>
-              <button class="p-button--link detail-btn" data-id="${client.id}">Details</button>
+              <button class="p-button p-button--base p-button--small detail-btn" data-id="${client.id}">Details</button>
             </td>
           </tr>
         `
