@@ -53,6 +53,15 @@ The server dispatches workflow activities to individual inner clients over NATS.
 - [super-client Testing](#super-client-testing)
 - [super-client Project Structure](#super-client-project-structure)
 
+**WebUI**
+- [WebUI Overview](#webui-overview)
+- [WebUI Features](#webui-features)
+- [WebUI Setup](#webui-setup)
+- [WebUI Development](#webui-development)
+- [WebUI Building](#webui-building)
+- [WebUI Deployment](#webui-deployment)
+- [WebUI Architecture](#webui-architecture)
+
 ---
 
 # Automation Engine Server
@@ -1023,4 +1032,385 @@ internal/
 go.mod
 go.sum
 README.md
+
+---
+
+# WebUI
+
+## WebUI Overview
+
+The WebUI is a modern, responsive web interface for the **super-duper-bassoon** automation engine, built with TypeScript, Vite, and Canonical's Vanilla Framework. It provides full CRUD operations, real-time monitoring, and a mobile-friendly dashboard for managing workflows, clients, health metrics, and system alerts.
+
+**Capabilities:**
+
+- **Full Workflow Management** — create, edit, delete, activate/deactivate, and manually trigger workflows
+- **Run Monitoring** — view paginated run history with health metrics and detailed results per client
+- **Client Management** — list, inspect, and manage client metadata and state
+- **Health Dashboard** — real-time workflow health aggregation, circuit breaker status, and trend indicators
+- **Ban Management** — view and revoke client bans with audit trails
+- **Alert Logging** — chronological alert records with filtering by severity and type
+- **Type Safety** — 100% TypeScript with strict mode enabled
+- **No Heavy Dependencies** — vanilla JavaScript with lightweight CSS framework only
+
+---
+
+## WebUI Features
+
+| Feature | Description |
+|---------|-------------|
+| Workflows | Create, list, edit, delete workflows; trigger manual runs; activate/deactivate |
+| Runs | Paginated run history; filter by workflow type; view per-client results |
+| Health | Dashboard with workflow type health, circuit breaker status, success trends |
+| Clients | List registered clients; view OS, labels, state; monitor last seen timestamp |
+| Alerts | Chronological alert log with severity filtering; view alert context and details |
+| Bans | Manage banned clients; view evidence and ban reason; unban with admin confirmation |
+| System | Real-time uptime, goroutine count, component health via status endpoint |
+
+---
+
+## WebUI Setup
+
+### Prerequisites
+
+- Node.js 18+
+- npm 8+
+
+### Installation
+
+```bash
+cd webui
+npm install
+```
+
+### Development
+
+Start the development server with hot reload:
+
+```bash
+npm run dev
+```
+
+The app will be available at `http://localhost:5173/`
+
+**Note:** By default, it expects the backend API at `http://localhost:8080`. Configure the base URL in `src/config.ts` if your server runs on a different host/port.
+
+---
+
+## WebUI Development
+
+### Code Structure
+
+```
+src/
+├── api/              # Type-safe API client (workflows, runs, clients, health, bans, alerts, system)
+├── types/            # TypeScript type definitions for all domain models
+├── store/            # Custom pub-subscribe state management (no external deps)
+├── components/       # Layout (Header, Sidebar, MainLayout) and common UI elements
+├── pages/            # Page components (Workflows, Runs, Health, Clients, Alerts, Bans, NotFound)
+├── utils/            # Formatting, color, validation, and DOM utilities
+├── styles/           # SCSS with variables and component-scoped styling
+├── main.ts           # Application bootstrap
+├── app.ts            # Root controller
+├── router.ts         # Hash-based client-side routing
+└── config.ts         # Configuration (API base URL, app settings)
+```
+
+### Local development with backend
+
+Run the server and WebUI in separate terminals:
+
+```bash
+# Terminal 1: Start the Go server
+go run ./cmd
+
+# Terminal 2: Start the WebUI dev server
+cd webui && npm run dev
+```
+
+Then open `http://localhost:5173` in your browser.
+
+### Type definitions
+
+All API response types are defined in `src/types/`. When backend endpoints change, update the corresponding type definitions first, then update the API service.
+
+### Styling
+
+Styles use Canonical's Vanilla CSS framework. Override defaults in `src/styles/variables.scss`. Component-scoped styles go in `src/styles/components.scss`.
+
+### Testing
+
+Run unit and integration tests:
+
+```bash
+# All tests
+npm test
+
+# Specific test file
+npm test app.spec.ts
+
+# Watch mode
+npm test -- --watch
+
+# View test report
+npx playwright show-report
+```
+
+Manual verification tests (no browser required):
+
+```bash
+node tests/manual-verification.mjs
+```
+
+### Code quality
+
+Lint TypeScript:
+
+```bash
+npm run lint
+```
+
+Format with Prettier:
+
+```bash
+npm run format
+```
+
+---
+
+## WebUI Building
+
+### Development build
+
+```bash
+npm run build
+```
+
+Creates an optimized bundle in the `dist/` directory:
+
+- `dist/index.html` — entry point
+- `dist/assets/` — bundled JavaScript and CSS
+- `dist/logo.png` — static assets
+
+**Bundle size:** ~25KB gzipped (JavaScript + CSS)
+
+### Production build
+
+Same as above; the output is ready for embedding in the Go server.
+
+---
+
+## WebUI Deployment
+
+### Embedding in Go
+
+The built `dist/` folder can be embedded in the Go binary:
+
+```go
+//go:embed webui/dist
+var webuiAssets embed.FS
+
+// Serve the SPA with fallback to index.html
+r.Handle("/*", http.FileServer(http.FS(webuiAssets)))
+```
+
+### Docker example
+
+```dockerfile
+# Build stage
+FROM node:18-alpine AS builder
+WORKDIR /build
+COPY webui .
+RUN npm install && npm run build
+
+# Server stage
+FROM golang:1.25-alpine AS server-builder
+WORKDIR /src
+COPY . .
+COPY --from=builder /build/dist webui/dist
+RUN go build -o /automation-server ./cmd
+
+# Runtime
+FROM alpine:3.20
+COPY --from=server-builder /automation-server /usr/local/bin/automation-server
+EXPOSE 8080
+ENTRYPOINT ["/usr/local/bin/automation-server"]
+```
+
+### Configuration via environment
+
+The WebUI reads the API base URL from `src/config.ts`:
+
+- **Development:** `http://localhost:8080` (absolute URL)
+- **Production:** Relative paths (same origin as the SPA)
+
+If serving the SPA at the root (`/`), the WebUI automatically uses relative paths to the API (`/workflows`, `/runs`, etc.).
+
+---
+
+## WebUI Architecture
+
+### State Management
+
+Simple publish-subscribe pattern with no external dependencies:
+
+```typescript
+// Subscribe to state changes
+store.subscribe((state) => {
+  console.log('State updated:', state);
+});
+
+// Update state
+store.setState('workflows', { items: [...], loading: false });
+```
+
+### API Layer
+
+Type-safe HTTP client with automatic error handling:
+
+```typescript
+import { workflowsAPI } from '@/api/workflows';
+
+// List workflows
+const workflows = await workflowsAPI.getAll();
+
+// Create workflow
+const created = await workflowsAPI.create({
+  name: 'Nightly sync',
+  workflow_type: 'sync',
+  // ...
+});
+```
+
+### Routing
+
+Hash-based client-side routing (works offline, no server rewrites needed):
+
+```typescript
+// Navigate
+router.navigate('/#/workflows');
+
+// Listen to route changes
+router.subscribe((path) => {
+  console.log('Route changed to:', path);
+});
+```
+
+### Component Pattern
+
+Components are TypeScript classes that manage their own lifecycle and rendering:
+
+```typescript
+export class WorkflowsPage {
+  private container: HTMLElement;
+
+  constructor(container: HTMLElement) {
+    this.container = container;
+  }
+
+  async render() {
+    // Fetch data
+    const workflows = await workflowsAPI.getAll();
+
+    // Update DOM
+    this.container.innerHTML = `
+      <div class="workflows-list">
+        ${workflows.items.map(w => `<div>${w.name}</div>`).join('')}
+      </div>
+    `;
+  }
+}
+```
+
+### Browser support
+
+- Chrome/Chromium 90+
+- Firefox 88+
+- Safari 14+
+- Edge 90+
+
+### Accessibility
+
+WCAG 2.1 AA compliant with:
+- Semantic HTML5
+- ARIA labels on interactive elements
+- Keyboard navigation
+- Color contrast ratios ≥ 4.5:1
+
+---
+
+## WebUI Project Structure
+
+```
+webui/
+├── src/
+│   ├── index.html                 # HTML entry point
+│   ├── main.ts                    # Bootstrap
+│   ├── app.ts                     # Root controller
+│   ├── router.ts                  # Client-side router
+│   ├── config.ts                  # Configuration
+│   ├── api/
+│   │   ├── client.ts              # HTTP client
+│   │   ├── workflows.ts
+│   │   ├── runs.ts
+│   │   ├── clients.ts
+│   │   ├── health.ts
+│   │   ├── bans.ts
+│   │   ├── alerts.ts
+│   │   └── system.ts
+│   ├── types/
+│   │   ├── workflow.ts
+│   │   ├── run.ts
+│   │   ├── client.ts
+│   │   ├── ban.ts
+│   │   ├── health.ts
+│   │   ├── alert.ts
+│   │   └── api.ts
+│   ├── store/
+│   │   └── index.ts               # State management
+│   ├── components/
+│   │   ├── layout/
+│   │   │   ├── Header.ts
+│   │   │   ├── Sidebar.ts
+│   │   │   └── MainLayout.ts
+│   │   └── common/
+│   │       ├── LoadingSpinner.ts
+│   │       ├── ErrorAlert.ts
+│   │       ├── Badge.ts
+│   │       ├── HealthBar.ts
+│   │       ├── Pagination.ts
+│   │       └── ConfirmDialog.ts
+│   ├── pages/
+│   │   ├── WorkflowsPage.ts
+│   │   ├── RunsPage.ts
+│   │   ├── HealthPage.ts
+│   │   ├── ClientsPage.ts
+│   │   ├── AlertsPage.ts
+│   │   ├── BansPage.ts
+│   │   └── NotFoundPage.ts
+│   ├── utils/
+│   │   ├── format.ts
+│   │   ├── color.ts
+│   │   ├── validation.ts
+│   │   └── dom.ts
+│   └── styles/
+│       ├── main.scss
+│       ├── variables.scss
+│       ├── components.scss
+│       └── pages.scss
+├── public/
+│   └── logo.png
+├── tests/
+│   ├── app.spec.ts
+│   ├── components.spec.ts
+│   ├── api-integration.spec.ts
+│   └── manual-verification.mjs
+├── dist/                          # Build output
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+├── playwright.config.ts
+└── README.md
+```
+
+**For detailed WebUI development, testing, and troubleshooting, see `webui/README.md`.**
 ```
