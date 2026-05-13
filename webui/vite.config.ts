@@ -17,7 +17,12 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api': 'http://localhost:8080',
+      '/api': {
+        target: 'http://localhost:8080',
+        bypass(req) {
+          if (req.url?.endsWith('.ts')) return req.url;
+        },
+      },
     },
   },
 });

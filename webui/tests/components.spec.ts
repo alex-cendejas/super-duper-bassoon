@@ -14,8 +14,8 @@ test.describe('Components and UI Elements', () => {
     await page.goto('http://localhost:5173/#/workflows');
     await page.waitForTimeout(300);
 
-    // Check if action buttons exist
-    const buttons = page.locator('.p-button');
+    // Check if action buttons exist (matches any p-button variant class)
+    const buttons = page.locator('[class*="p-button"]');
     const count = await buttons.count();
     // At least one button should exist
     expect(count).toBeGreaterThan(0);
@@ -36,12 +36,13 @@ test.describe('Components and UI Elements', () => {
   test('should have valid navigation structure', async ({ page }) => {
     await page.goto('http://localhost:5173/');
 
-    // Check header navigation
+    // Check header is present
     const header = page.locator('.p-navigation');
     await expect(header).toBeVisible();
 
-    const navItems = page.locator('.p-navigation__item');
-    const itemCount = await navItems.count();
+    // Navigation items live in the sidebar
+    const sideNavItems = page.locator('.p-side-navigation__item');
+    const itemCount = await sideNavItems.count();
     expect(itemCount).toBeGreaterThan(0);
   });
 
@@ -114,8 +115,12 @@ test.describe('Components and UI Elements', () => {
   });
 
   test('error handling should display error messages', async ({ page, context }) => {
-    // Intercept API calls to simulate errors
+    // Intercept API calls to simulate errors (skip TypeScript source module files)
     await context.route('**/api/**', (route) => {
+      if (route.request().url().endsWith('.ts')) {
+        route.continue();
+        return;
+      }
       route.abort('failed');
     });
 

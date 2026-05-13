@@ -1,3 +1,4 @@
+import { apiClient } from './client';
 import type { Alert } from '@/types';
 
 export interface AlertFilters {
@@ -9,11 +10,20 @@ export interface AlertFilters {
 }
 
 export const alertsAPI = {
-  getAll(_filters?: AlertFilters): Promise<{ items: Alert[]; total: number }> {
-    return Promise.resolve({ items: [], total: 0 });
+  getAll(filters?: AlertFilters): Promise<{ items: Alert[]; total: number }> {
+    const params = new URLSearchParams();
+    if (filters) {
+      if (filters.severity) params.append('severity', filters.severity);
+      if (filters.type) params.append('type', filters.type);
+      if (filters.workflow) params.append('workflow', filters.workflow);
+      if (filters.limit) params.append('limit', filters.limit.toString());
+      if (filters.offset) params.append('offset', filters.offset.toString());
+    }
+    const queryStr = params.toString();
+    return apiClient.get(`/alerts${queryStr ? `?${queryStr}` : ''}`);
   },
 
-  get(_id: string): Promise<Alert> {
-    return Promise.reject(new Error('Not implemented'));
+  get(id: string): Promise<Alert> {
+    return apiClient.get(`/alerts/${id}`);
   },
 };

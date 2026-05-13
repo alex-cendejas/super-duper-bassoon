@@ -18,8 +18,12 @@ test.describe('API Integration', () => {
   });
 
   test('should handle API errors gracefully', async ({ page, context }) => {
-    // Mock API errors
+    // Mock API errors (skip TypeScript source module files)
     await context.route('**/api/**', (route) => {
+      if (route.request().url().endsWith('.ts')) {
+        route.continue();
+        return;
+      }
       route.abort('failed');
     });
 
@@ -33,6 +37,10 @@ test.describe('API Integration', () => {
 
   test('should handle API timeouts', async ({ page, context }) => {
     await context.route('**/api/**', async (route) => {
+      if (route.request().url().endsWith('.ts')) {
+        route.continue();
+        return;
+      }
       await new Promise((resolve) => setTimeout(resolve, 40000));
       route.continue();
     });
@@ -48,7 +56,7 @@ test.describe('API Integration', () => {
   test('should make GET request to /api/runs', async ({ page, context }) => {
     let runsApiCalled = false;
 
-    await context.route('**/api/runs', (route) => {
+    await context.route('**/api/runs*', (route) => {
       runsApiCalled = true;
       route.continue();
     });
@@ -90,7 +98,7 @@ test.describe('API Integration', () => {
   test('should make GET request to /api/alerts', async ({ page, context }) => {
     let alertsApiCalled = false;
 
-    await context.route('**/api/alerts', (route) => {
+    await context.route('**/api/alerts*', (route) => {
       alertsApiCalled = true;
       route.continue();
     });
