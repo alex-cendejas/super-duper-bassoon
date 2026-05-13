@@ -14,7 +14,6 @@ export function getSeverityColor(severity: AlertSeverity): string {
   const colors: Record<AlertSeverity, string> = {
     info: '#0068d6',
     warning: '#f58700',
-    error: '#f58700',
     critical: '#c7162b',
   };
   return colors[severity];
