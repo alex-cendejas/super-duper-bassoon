@@ -1,6 +1,7 @@
 import { router } from '@/router';
 import { store } from '@/store';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { initializeModalRenderer } from '@/components/modals/ModalRenderer';
 import { WorkflowsPage } from '@/pages/WorkflowsPage';
 import { RunsPage } from '@/pages/RunsPage';
 import { HealthPage } from '@/pages/HealthPage';
@@ -49,6 +50,8 @@ function renderPage() {
 }
 
 export function initApp() {
+  initializeModalRenderer();
+
   router.subscribe((path) => {
     store.setCurrentPage(path);
     renderPage();

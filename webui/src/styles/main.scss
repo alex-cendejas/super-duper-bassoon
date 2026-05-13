@@ -168,18 +168,25 @@ body {
     font-weight: bold;
   }
 
+  tbody tr {
+    border-bottom: 1px solid var(--color-border);
+
+    &:nth-child(odd) {
+      background-color: #fafafa;
+    }
+
+    &:hover {
+      background-color: #f0f0f0;
+    }
+  }
+
   td {
     padding: var(--space-1);
-    border-bottom: 1px solid var(--color-border);
 
     // Keep action buttons from touching each other in table cells
     .p-button + .p-button {
       margin-left: var(--space-1);
     }
-  }
-
-  tr:hover {
-    background-color: var(--color-hover);
   }
 }
 
