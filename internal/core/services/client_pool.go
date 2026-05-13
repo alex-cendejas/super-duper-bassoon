@@ -59,6 +59,7 @@ func (m *ClientPoolManager) Initialize(ctx context.Context, poolSize int) error 
 		// Register client with the server.
 		if err := m.broker.RegisterClient(ctx, domain.ClientMetadata{
 			ClientID: clientID,
+			OS:       "ubuntu",
 			Active:   true,
 			Labels:   map[string]string{},
 			InnerState: map[string]interface{}{

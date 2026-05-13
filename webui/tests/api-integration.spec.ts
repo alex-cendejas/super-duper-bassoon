@@ -208,4 +208,129 @@ test.describe('API Integration', () => {
       expect(Object.keys(requestHeaders).length).toBeGreaterThan(0);
     }
   });
+
+  test('should make GET request to /api/clients/{id} when client detail modal opens', async ({
+    page,
+    context,
+  }) => {
+    let clientDetailApiCalled = false;
+    let clientDetailUrl = '';
+
+    await context.route('**/api/clients/**', (route) => {
+      const url = route.request().url();
+      if (!url.endsWith('/clients')) {
+        clientDetailApiCalled = true;
+        clientDetailUrl = url;
+      }
+      route.continue();
+    });
+
+    // Mock the clients list API
+    await context.route('**/api/clients', (route) => {
+      if (route.request().method() === 'GET') {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            items: [
+              {
+                client_id: 'client-test-123',
+                os: 'linux',
+                labels: { env: 'test' },
+                inner_state: {},
+                active: true,
+                last_seen_at: '2026-05-13T10:00:00Z',
+              },
+            ],
+          }),
+        });
+      } else {
+        route.continue();
+      }
+    });
+
+    await page.goto('http://localhost:5173/#/clients');
+    await page.waitForTimeout(500);
+
+    // Find and click the Details button
+    const detailButton = page.locator('button.detail-btn').first();
+    await detailButton.click();
+    await page.waitForTimeout(500);
+
+    // Verify that the client detail API was called
+    expect(clientDetailApiCalled).toBe(true);
+    expect(clientDetailUrl).toContain('/api/clients/client-test-123');
+  });
+
+  test('should display client details in modal after fetching', async ({ page, context }) => {
+    // Mock the clients list API
+    await context.route('**/api/clients', (route) => {
+      if (route.request().method() === 'GET' && !route.request().url().includes('/api/clients/')) {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            items: [
+              {
+                client_id: 'client-abc-456',
+                os: 'ubuntu',
+                labels: { region: 'us-west', env: 'prod' },
+                inner_state: { cpu_usage: 45 },
+                active: true,
+                last_seen_at: '2026-05-13T10:00:00Z',
+              },
+            ],
+          }),
+        });
+      } else {
+        route.continue();
+      }
+    });
+
+    // Mock individual client detail API
+    await context.route('**/api/clients/client-abc-456', (route) => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          client_id: 'client-abc-456',
+          os: 'ubuntu',
+          labels: { region: 'us-west', env: 'prod' },
+          inner_state: { cpu_usage: 45 },
+          active: true,
+          last_seen_at: '2026-05-13T10:00:00Z',
+        }),
+      });
+    });
+
+    await page.goto('http://localhost:5173/#/clients');
+    await page.waitForTimeout(500);
+
+    // Find and click the Details button
+    const detailButton = page.locator('button.detail-btn').first();
+    await detailButton.click();
+    await page.waitForTimeout(1000);
+
+    // Verify modal is displayed with client details
+    const modal = page.locator('.p-modal');
+    await expect(modal).toBeVisible();
+
+    // Check for client ID in the modal
+    const modalContent = page.locator('.p-modal__body');
+    await expect(modalContent).toContainText('client-abc-456');
+
+    // Check for OS
+    await expect(modalContent).toContainText('ubuntu');
+
+    // Check for labels
+    await expect(modalContent).toContainText('region');
+    await expect(modalContent).toContainText('us-west');
+
+    // Check for status badge
+    await expect(modalContent).toContainText('Active');
+
+    // No error overlay should be present
+    const errorOverlay = page.locator('.vite-error-overlay');
+    await expect(errorOverlay).toHaveCount(0);
+  });
 });

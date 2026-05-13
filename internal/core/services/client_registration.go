@@ -35,6 +35,7 @@ func (s *ClientRegistrationService) HandleResult(ctx context.Context, r *domain.
 	}
 	client := &domain.ClientMetadata{
 		ClientID:   r.ClientID,
+		OS:         "ubuntu",
 		Active:     true,
 		Labels:     map[string]string{},
 		InnerState: innerState,
