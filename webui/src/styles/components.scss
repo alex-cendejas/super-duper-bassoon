@@ -52,11 +52,11 @@
   textarea,
   select {
     padding: var(--space-1);
-    border: 1px solid #999999;
+    border: 1px solid var(--color-border);
     border-radius: var(--border-radius-base);
     font-family: var(--font-family);
     font-size: var(--font-size-base);
-    background-color: white;
+    background-color: var(--color-bg-light);
     color: var(--color-text);
 
     &:focus {
@@ -109,14 +109,15 @@
 
 // Detail cards
 .detail-card {
-  background-color: white;
-  border: 1px solid #999999;
+  background-color: var(--color-bg-light);
+  border: 1px solid var(--color-border);
   border-radius: var(--border-radius-base);
   padding: var(--space-2);
   margin-bottom: var(--space-2);
+  box-shadow: var(--shadow-small);
 
   .detail-card__header {
-    border-bottom: 2px solid #999999;
+    border-bottom: 2px solid #767676;
     padding-bottom: var(--space-2);
     margin-bottom: var(--space-2);
 
@@ -132,7 +133,7 @@
       display: flex;
       justify-content: space-between;
       padding: var(--space-1) 0;
-      border-bottom: 1px solid #e8e8e8;
+      border-bottom: 1px solid var(--color-border);
 
       &:last-child {
         border-bottom: none;
@@ -157,7 +158,7 @@
 // State inspector (JSON display)
 .state-inspector {
   background-color: #f5f5f5;
-  border: 1px solid #999999;
+  border: 1px solid var(--color-border);
   border-radius: var(--border-radius-base);
   padding: var(--space-2);
   font-family: 'Courier New', monospace;
@@ -207,13 +208,14 @@
   display: inline-block;
 
   .dropdown-trigger {
-    background-color: white;
-    border: 1px solid #999999;
+    background-color: var(--color-bg-light);
+    border: 1px solid var(--color-border);
     padding: var(--space-1) var(--space-2);
     cursor: pointer;
     border-radius: var(--border-radius-base);
     color: var(--color-text);
     font-weight: 500;
+    transition: background-color var(--transition-fast);
 
     &::after {
       content: ' ▼';
@@ -221,18 +223,23 @@
     }
 
     &:hover {
-      background-color: #f9f9f9;
+      background-color: var(--color-hover);
+    }
+
+    &:focus-visible {
+      outline: 3px solid #0068d6;
+      outline-offset: 2px;
     }
   }
 
   .dropdown-content {
     display: none;
     position: absolute;
-    background-color: white;
+    background-color: var(--color-bg-light);
     min-width: 160px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 1;
-    border: 1px solid #999999;
+    box-shadow: var(--shadow-medium);
+    z-index: 100;
+    border: 1px solid var(--color-border);
     border-radius: var(--border-radius-base);
     top: 100%;
     left: 0;
@@ -252,10 +259,10 @@
       width: 100%;
       text-align: left;
       cursor: pointer;
-      transition: all var(--transition-fast);
+      transition: background-color var(--transition-fast);
 
       &:hover {
-        background-color: #f0f0f0;
+        background-color: var(--color-hover);
       }
 
       &:first-child {
@@ -273,7 +280,7 @@
 .empty-state {
   text-align: center;
   padding: var(--space-4);
-  color: #666666;
+  color: var(--color-text-secondary);
 
   .empty-state__icon {
     font-size: 3rem;
@@ -289,7 +296,7 @@
 
   .empty-state__description {
     margin-bottom: var(--space-2);
-    color: #666666;
+    color: var(--color-text-secondary);
   }
 }
 
@@ -298,14 +305,14 @@
   input {
     width: 100%;
     padding: var(--space-1);
-    border: 1px solid #999999;
+    border: 1px solid var(--color-border);
     border-radius: var(--border-radius-base);
     font-size: var(--font-size-base);
-    background-color: white;
+    background-color: var(--color-bg-light);
     color: var(--color-text);
 
     &::placeholder {
-      color: #999999;
+      color: var(--color-text-secondary);
     }
 
     &:focus {
