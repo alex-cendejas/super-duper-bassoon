@@ -1,6 +1,10 @@
 package domain
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type AlertSeverity string
 
@@ -23,6 +27,7 @@ const (
 )
 
 type Alert struct {
+	ID        string                 `json:"id"`
 	Kind      AlertKind              `json:"kind"`
 	Severity  AlertSeverity          `json:"severity"`
 	Message   string                 `json:"message"`
@@ -32,6 +37,7 @@ type Alert struct {
 
 func NewAlert(kind AlertKind, severity AlertSeverity, message string) *Alert {
 	return &Alert{
+		ID:        uuid.NewString(),
 		Kind:      kind,
 		Severity:  severity,
 		Message:   message,

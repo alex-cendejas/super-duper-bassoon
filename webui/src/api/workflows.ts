@@ -8,7 +8,7 @@ import type {
 
 export const workflowsAPI = {
   getAll(): Promise<Workflow[]> {
-    return apiClient.get<{ items: Workflow[] }>('/workflows').then((r) => r.items);
+    return apiClient.get<{ items: Workflow[] }>('/workflows').then((r) => r.items ?? []);
   },
 
   get(id: string): Promise<Workflow> {

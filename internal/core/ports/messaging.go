@@ -15,6 +15,9 @@ type MessageBroker interface {
 	// PublishResult sends a result message back to the server.
 	PublishResult(ctx context.Context, result domain.ResultMessage) error
 
+	// RegisterClient publishes a registration message for a new client.
+	RegisterClient(ctx context.Context, client domain.ClientMetadata) error
+
 	// Close tears down the broker connection.
 	Close(ctx context.Context) error
 }

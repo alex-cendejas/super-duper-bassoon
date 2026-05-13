@@ -51,12 +51,12 @@ export function ClientsPage(): HTMLElement {
           .map(
             (client) => `
           <tr>
-            <td>${client.id}</td>
+            <td>${client.client_id}</td>
             <td>${client.os}</td>
             <td>${client.active ? '<span class="p-badge--positive">Active</span>' : '<span class="p-badge--neutral">Inactive</span>'}</td>
-            <td>${formatDate(client.last_seen)}</td>
+            <td>${formatDate(client.last_seen_at)}</td>
             <td>
-              <button class="p-button p-button--base p-button--small detail-btn" data-id="${client.id}">Details</button>
+              <button class="p-button p-button--base p-button--small detail-btn" data-id="${client.client_id}">Details</button>
             </td>
           </tr>
         `

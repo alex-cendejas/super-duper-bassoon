@@ -39,7 +39,7 @@ func (r *SQLiteHealthRepo) ListRunHealths(ctx context.Context, workflowType stri
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*domain.RunHealth
+	out := make([]*domain.RunHealth, 0)
 	for rows.Next() {
 		h, err := scanRunHealth(rows)
 		if err != nil {
@@ -87,7 +87,7 @@ func (r *SQLiteHealthRepo) ListAllWorkflowTypeHealths(ctx context.Context) ([]*d
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*domain.WorkflowTypeHealth
+	out := make([]*domain.WorkflowTypeHealth, 0)
 	for rows.Next() {
 		var h domain.WorkflowTypeHealth
 		var trend string

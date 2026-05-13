@@ -41,3 +41,7 @@ func (s *StdoutAlertPublisher) Snapshot() []*domain.Alert {
 	copy(cp, s.Alerts)
 	return cp
 }
+
+func (s *StdoutAlertPublisher) GetAlerts() []*domain.Alert {
+	return s.Snapshot()
+}

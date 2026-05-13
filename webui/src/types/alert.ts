@@ -1,13 +1,10 @@
 export interface Alert {
   id: string;
-  timestamp: string;
+  kind: string;
   severity: AlertSeverity;
-  type: string;
   message: string;
-  source_workflow?: string;
-  source_client?: string;
-  run_id_evidence?: string;
   details: Record<string, unknown>;
+  timestamp: string;
 }
 
-export type AlertSeverity = 'info' | 'warning' | 'error' | 'critical';
+export type AlertSeverity = 'info' | 'warning' | 'critical';

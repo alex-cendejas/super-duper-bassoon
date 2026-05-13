@@ -13,9 +13,9 @@ import (
 
 const (
 	// DispatchSubjectFmt is the NATS subject for dispatch messages per client.
-	DispatchSubjectFmt = "super-client.%s.dispatch"
-	// ResultSubject is the NATS subject for result messages to the server.
-	ResultSubject = "server.results"
+	DispatchSubjectFmt = "dispatch.%s"
+	// RegisterSubject is the NATS subject for client registration messages.
+	RegisterSubject = "client.register"
 )
 
 // NATSBroker is the NATS-backed MessageBroker implementation.
@@ -82,16 +82,26 @@ func (b *NATSBroker) SubscribeDispatch(ctx context.Context, clientIDs []string) 
 	return out, nil
 }
 
-// PublishResult marshals and publishes a result message.
+// PublishResult marshals and publishes a result message to a per-client subject.
 func (b *NATSBroker) PublishResult(_ context.Context, result domain.ResultMessage) error {
 	data, err := json.Marshal(result)
 	if err != nil {
 		return fmt.Errorf("marshal result: %w", err)
 	}
-	if err := b.conn.Publish(ResultSubject, data); err != nil {
+	subject := fmt.Sprintf("result.%s", result.ClientID)
+	if err := b.conn.Publish(subject, data); err != nil {
 		return fmt.Errorf("publish result: %w", err)
 	}
 	return nil
+}
+
+// RegisterClient publishes a registration message for a new client.
+func (b *NATSBroker) RegisterClient(ctx context.Context, client domain.ClientMetadata) error {
+	data, err := json.Marshal(client)
+	if err != nil {
+		return fmt.Errorf("marshal registration: %w", err)
+	}
+	return b.conn.Publish(RegisterSubject, data)
 }
 
 // Close drains subscriptions and the connection.

@@ -56,6 +56,19 @@ func (m *ClientPoolManager) Initialize(ctx context.Context, poolSize int) error 
 			return fmt.Errorf("initialize client %s: %w", clientID, err)
 		}
 		m.clientIDs = append(m.clientIDs, clientID)
+		// Register client with the server.
+		if err := m.broker.RegisterClient(ctx, domain.ClientMetadata{
+			ClientID: clientID,
+			Active:   true,
+			Labels:   map[string]string{},
+			InnerState: map[string]interface{}{
+				"packages":       client.State.Packages,
+				"config_version": client.State.ConfigVersion,
+				"power_state":    string(client.State.PowerState),
+			},
+		}); err != nil {
+			m.logger.Warn("failed to register client", "client_id", clientID, "err", err)
+		}
 	}
 	m.logger.Info("client pool initialized", "pool_size", poolSize, "prefix", m.prefix)
 	return nil

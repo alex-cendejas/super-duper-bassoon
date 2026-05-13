@@ -182,6 +182,42 @@ func TestClientPool_GetClientState(t *testing.T) {
 	}
 }
 
+func TestClientPool_Initialize_RegistersClients(t *testing.T) {
+	pool, _, broker, _ := buildPool(t, "reg")
+	ctx := context.Background()
+
+	if err := pool.Initialize(ctx, 3); err != nil {
+		t.Fatalf("Initialize failed: %v", err)
+	}
+
+	registered := broker.Registered
+	if len(registered) != 3 {
+		t.Errorf("expected 3 registered clients, got %d", len(registered))
+	}
+
+	ids := pool.ClientIDs()
+	regByID := make(map[string]domain.ClientMetadata, len(registered))
+	for _, r := range registered {
+		regByID[r.ClientID] = r
+	}
+	for _, id := range ids {
+		r, ok := regByID[id]
+		if !ok {
+			t.Errorf("client %s was not registered", id)
+			continue
+		}
+		if !r.Active {
+			t.Errorf("client %s should be active", id)
+		}
+		if r.Labels == nil {
+			t.Errorf("client %s Labels should not be nil", id)
+		}
+		if r.InnerState == nil {
+			t.Errorf("client %s InnerState should not be nil", id)
+		}
+	}
+}
+
 func TestClientPool_Run_ProcessesDispatch(t *testing.T) {
 	pool, store, broker, _ := buildPool(t, "client")
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)

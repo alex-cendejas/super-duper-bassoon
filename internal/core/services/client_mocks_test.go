@@ -124,9 +124,11 @@ func (m *MockActivityExecutor) CallCount() int {
 // --- MockMessageBroker ---
 
 type MockMessageBroker struct {
-	published []domain.ResultMessage
-	mu        sync.Mutex
-	PublishErr error
+	published  []domain.ResultMessage
+	Registered []domain.ClientMetadata
+	mu         sync.Mutex
+	PublishErr  error
+	RegisterErr error
 	dispatches chan domain.DispatchMessage
 }
 
@@ -146,6 +148,16 @@ func (m *MockMessageBroker) PublishResult(_ context.Context, result domain.Resul
 	}
 	m.mu.Lock()
 	m.published = append(m.published, result)
+	m.mu.Unlock()
+	return nil
+}
+
+func (m *MockMessageBroker) RegisterClient(_ context.Context, client domain.ClientMetadata) error {
+	if m.RegisterErr != nil {
+		return m.RegisterErr
+	}
+	m.mu.Lock()
+	m.Registered = append(m.Registered, client)
 	m.mu.Unlock()
 	return nil
 }

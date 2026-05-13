@@ -8,7 +8,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/super-duper-bassoon/internal/adapters/alert"
+	"github.com/super-duper-bassoon/internal/adapters/repository"
 	"github.com/super-duper-bassoon/internal/core/domain"
+	"github.com/super-duper-bassoon/internal/core/services"
 )
 
 func TestServer_FullWorkflowFlow(t *testing.T) {
@@ -121,4 +124,133 @@ func TestServer_GetClientBans(t *testing.T) {
 		t.Errorf("bans: %d", resp.StatusCode)
 	}
 	resp.Body.Close()
+}
+
+func TestServer_Alerts_EmptyList(t *testing.T) {
+	router, _, _, _ := setupRouter(t)
+	srv := httptest.NewServer(router)
+	defer srv.Close()
+
+	resp, err := srv.Client().Get(srv.URL + "/alerts")
+	if err != nil {
+		t.Fatalf("GET /alerts: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected 200, got %d", resp.StatusCode)
+	}
+
+	var body map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	items, ok := body["items"]
+	if !ok {
+		t.Fatal("expected 'items' key in response")
+	}
+	if items == nil {
+		t.Error("items should not be null")
+	}
+	total, ok := body["total"]
+	if !ok {
+		t.Fatal("expected 'total' key in response")
+	}
+	if total.(float64) != 0 {
+		t.Errorf("expected total=0, got %v", total)
+	}
+}
+
+func TestServer_Alerts_WithAlerts(t *testing.T) {
+	db, err := repository.OpenSQLite(":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	registry := repository.NewRegistry(db)
+	alerter := alert.NewStdoutAlertPublisher(nil)
+	api := services.NewAPIHandlerService(registry.Workflow(), nil, registry.Client(), registry.Run(), registry.Result(), registry.Ban(), nil, nil, nil)
+	router := NewRouter(Deps{
+		API:           api,
+		HealthRepo:    registry.Health(),
+		Alerts:        alerter,
+		NATSConnected: func() bool { return true },
+		DBHealthy:     func() bool { return true },
+		Logger:        nil,
+	})
+	srv := httptest.NewServer(router)
+	defer srv.Close()
+
+	// Publish some alerts
+	ctx := context.Background()
+	_ = alerter.PublishAlert(ctx, domain.NewAlert(domain.AlertClientBanned, domain.SeverityCritical, "test alert 1"))
+	_ = alerter.PublishAlert(ctx, domain.NewAlert(domain.AlertCircuitOpened, domain.SeverityWarning, "test alert 2"))
+
+	resp, err := srv.Client().Get(srv.URL + "/alerts")
+	if err != nil {
+		t.Fatalf("GET /alerts: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected 200, got %d", resp.StatusCode)
+	}
+
+	var body map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	total := body["total"].(float64)
+	if total != 2 {
+		t.Errorf("expected total=2, got %v", total)
+	}
+	items := body["items"].([]interface{})
+	if len(items) != 2 {
+		t.Errorf("expected 2 items, got %d", len(items))
+	}
+	// Verify each alert has an id field
+	for i, item := range items {
+		m := item.(map[string]interface{})
+		if m["id"] == nil || m["id"] == "" {
+			t.Errorf("alert %d is missing id field", i)
+		}
+	}
+}
+
+func TestServer_Alerts_NilAlertsProvider(t *testing.T) {
+	db, err := repository.OpenSQLite(":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	registry := repository.NewRegistry(db)
+	api := services.NewAPIHandlerService(registry.Workflow(), nil, registry.Client(), registry.Run(), registry.Result(), registry.Ban(), nil, nil, nil)
+	router := NewRouter(Deps{
+		API:           api,
+		HealthRepo:    registry.Health(),
+		Alerts:        nil, // nil Alerts provider
+		NATSConnected: func() bool { return true },
+		DBHealthy:     func() bool { return true },
+		Logger:        nil,
+	})
+	srv := httptest.NewServer(router)
+	defer srv.Close()
+
+	resp, err := srv.Client().Get(srv.URL + "/alerts")
+	if err != nil {
+		t.Fatalf("GET /alerts: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected 200, got %d", resp.StatusCode)
+	}
+
+	var body map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if body["items"] == nil {
+		t.Error("items should be empty array, not null")
+	}
+	if body["total"].(float64) != 0 {
+		t.Errorf("expected total=0, got %v", body["total"])
+	}
 }

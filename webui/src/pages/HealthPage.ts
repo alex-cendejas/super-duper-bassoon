@@ -40,17 +40,14 @@ export function HealthPage(): HTMLElement {
     state.health.items.forEach((health) => {
       const card = document.createElement('div');
       card.className = 'p-strip p-card';
-      const circuitStatus = health.circuit_broken ? 'BROKEN' : 'ACTIVE';
-      const statusClass = health.circuit_broken ? 'p-badge--negative' : 'p-badge--positive';
 
       card.innerHTML = `
         <h3>${health.workflow_type}</h3>
         <div class="health-metrics">
-          <p>Success: ${formatPercentage(health.success_percentage)}</p>
-          <p>Failures: ${formatPercentage(health.fail_percentage)}</p>
-          <p>Errors: ${formatPercentage(health.error_percentage)}</p>
+          <p>Success: ${formatPercentage(health.success_percentage_avg)}</p>
+          <p>Failures: ${formatPercentage(health.fail_percentage_avg)}</p>
+          <p>Errors: ${formatPercentage(health.error_percentage_avg)}</p>
           <p>Trend: <span class="trend-${health.trend}">${health.trend}</span></p>
-          <p>Circuit: <span class="p-badge ${statusClass}">${circuitStatus}</span></p>
         </div>
       `;
       grid.appendChild(card);

@@ -108,7 +108,7 @@ ORDER BY r.triggered_at DESC LIMIT 1
 }
 
 func collectRuns(rows *sql.Rows) ([]*domain.Run, error) {
-	var out []*domain.Run
+	out := make([]*domain.Run, 0)
 	for rows.Next() {
 		run, err := scanRun(rows)
 		if err != nil {

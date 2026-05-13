@@ -56,8 +56,9 @@ func TestNATSBroker_PublishResult(t *testing.T) {
 	}
 	defer nc.Close()
 
+	// The broker publishes to per-client subjects: result.<client_id>
 	received := make(chan []byte, 1)
-	sub, err := nc.Subscribe(messaging.ResultSubject, func(msg *nats.Msg) {
+	sub, err := nc.Subscribe("result.client-1", func(msg *nats.Msg) {
 		received <- msg.Data
 	})
 	if err != nil {
@@ -126,8 +127,8 @@ func TestNATSBroker_SubscribeDispatch(t *testing.T) {
 		Activity: domain.Activity{Type: domain.ActivityReboot},
 	}
 	data, _ := json.Marshal(dispatchMsg)
-	// Publish to client-001 subject
-	nc.Publish("super-client.client-001.dispatch", data)
+	// Publish to client-001 subject (new format: dispatch.<client_id>)
+	nc.Publish("dispatch.client-001", data)
 
 	select {
 	case msg, ok := <-dispatches:
@@ -169,7 +170,7 @@ func TestNATSBroker_SubscribeDispatch_MalformedMessage(t *testing.T) {
 	defer nc.Close()
 
 	// Send malformed JSON
-	nc.Publish("super-client.client-001.dispatch", []byte("{invalid json"))
+	nc.Publish("dispatch.client-001", []byte("{invalid json"))
 
 	// Malformed message should be dropped silently; channel should remain open.
 	select {
@@ -209,7 +210,7 @@ func TestNATSBroker_MultipleClients(t *testing.T) {
 	for _, id := range clientIDs {
 		msg := domain.DispatchMessage{RunID: "r-" + id, WfID: "wf-1", Activity: domain.Activity{Type: domain.ActivityReboot}}
 		data, _ := json.Marshal(msg)
-		nc.Publish("super-client."+id+".dispatch", data)
+		nc.Publish("dispatch."+id, data)
 	}
 
 	received := make(map[string]bool)
@@ -245,5 +246,147 @@ func TestNATSBroker_ConnectionFailed(t *testing.T) {
 	_, err := messaging.NewNATSBroker("nats://127.0.0.1:19999", testLogger())
 	if err == nil {
 		t.Error("expected error connecting to nonexistent NATS server")
+	}
+}
+
+// TestNATSBroker_PublishResult_PerClientSubject verifies that PublishResult
+// publishes to "result.<client_id>" and NOT to a single shared subject.
+func TestNATSBroker_PublishResult_PerClientSubject(t *testing.T) {
+	url := startEmbeddedNATS(t)
+	broker, err := messaging.NewNATSBroker(url, testLogger())
+	if err != nil {
+		t.Fatalf("NewNATSBroker failed: %v", err)
+	}
+	defer broker.Close(context.Background())
+
+	nc, err := nats.Connect(url)
+	if err != nil {
+		t.Fatalf("direct nats connect failed: %v", err)
+	}
+	defer nc.Close()
+
+	// Subscribe to result.my-client-42
+	received := make(chan string, 1)
+	sub, err := nc.Subscribe("result.my-client-42", func(msg *nats.Msg) {
+		var r domain.ResultMessage
+		if err := json.Unmarshal(msg.Data, &r); err == nil {
+			received <- r.ClientID
+		}
+	})
+	if err != nil {
+		t.Fatalf("subscribe failed: %v", err)
+	}
+	defer sub.Unsubscribe()
+	nc.Flush()
+
+	result := domain.ResultMessage{
+		RunID:    "run-1",
+		WfID:     "wf-1",
+		ClientID: "my-client-42",
+		Status:   domain.ResultSuccess,
+	}
+	if err := broker.PublishResult(context.Background(), result); err != nil {
+		t.Fatalf("PublishResult failed: %v", err)
+	}
+
+	select {
+	case clientID := <-received:
+		if clientID != "my-client-42" {
+			t.Errorf("expected client_id=my-client-42, got %s", clientID)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out: message not received on per-client subject result.my-client-42")
+	}
+}
+
+// TestNATSBroker_SubscribeDispatch_UsesCorrectSubject verifies that
+// SubscribeDispatch subscribes to "dispatch.<client_id>" subjects.
+func TestNATSBroker_SubscribeDispatch_UsesCorrectSubject(t *testing.T) {
+	url := startEmbeddedNATS(t)
+	broker, err := messaging.NewNATSBroker(url, testLogger())
+	if err != nil {
+		t.Fatalf("NewNATSBroker failed: %v", err)
+	}
+	defer broker.Close(context.Background())
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	dispatches, err := broker.SubscribeDispatch(ctx, []string{"node-007"})
+	if err != nil {
+		t.Fatalf("SubscribeDispatch failed: %v", err)
+	}
+
+	nc, _ := nats.Connect(url)
+	defer nc.Close()
+	nc.Flush()
+
+	msg := domain.DispatchMessage{RunID: "run-x", WfID: "wf-x", Activity: domain.Activity{Type: domain.ActivityReboot}}
+	data, _ := json.Marshal(msg)
+	// Must use new subject format: dispatch.<client_id>
+	nc.Publish("dispatch.node-007", data)
+
+	select {
+	case got := <-dispatches:
+		if got.RunID != "run-x" {
+			t.Errorf("expected run_id=run-x, got %s", got.RunID)
+		}
+		if got.ClientID != "node-007" {
+			t.Errorf("expected client_id=node-007, got %s", got.ClientID)
+		}
+	case <-ctx.Done():
+		t.Fatal("timed out: no dispatch received on dispatch.node-007")
+	}
+}
+
+// TestNATSBroker_RegisterClient verifies that RegisterClient publishes to
+// the client.register subject.
+func TestNATSBroker_RegisterClient(t *testing.T) {
+	url := startEmbeddedNATS(t)
+	broker, err := messaging.NewNATSBroker(url, testLogger())
+	if err != nil {
+		t.Fatalf("NewNATSBroker failed: %v", err)
+	}
+	defer broker.Close(context.Background())
+
+	nc, err := nats.Connect(url)
+	if err != nil {
+		t.Fatalf("direct nats connect failed: %v", err)
+	}
+	defer nc.Close()
+
+	received := make(chan []byte, 1)
+	sub, err := nc.Subscribe(messaging.RegisterSubject, func(msg *nats.Msg) {
+		received <- msg.Data
+	})
+	if err != nil {
+		t.Fatalf("subscribe failed: %v", err)
+	}
+	defer sub.Unsubscribe()
+	nc.Flush()
+
+	client := domain.ClientMetadata{
+		ClientID: "reg-client-1",
+		Active:   true,
+		Labels:   map[string]string{},
+		InnerState: map[string]interface{}{
+			"power_state": "on",
+		},
+	}
+	if err := broker.RegisterClient(context.Background(), client); err != nil {
+		t.Fatalf("RegisterClient failed: %v", err)
+	}
+
+	select {
+	case data := <-received:
+		var got domain.ClientMetadata
+		if err := json.Unmarshal(data, &got); err != nil {
+			t.Fatalf("unmarshal failed: %v", err)
+		}
+		if got.ClientID != "reg-client-1" {
+			t.Errorf("expected client_id=reg-client-1, got %s", got.ClientID)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for registration message")
 	}
 }

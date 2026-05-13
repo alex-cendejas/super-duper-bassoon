@@ -40,7 +40,7 @@ func (r *SQLiteClientRepo) ListClients(ctx context.Context) ([]*domain.ClientMet
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*domain.ClientMetadata
+	out := make([]*domain.ClientMetadata, 0)
 	for rows.Next() {
 		c, err := scanClient(rows)
 		if err != nil {
@@ -66,7 +66,7 @@ func (r *SQLiteClientRepo) GetClientsByIDs(ctx context.Context, ids []string) ([
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*domain.ClientMetadata
+	out := make([]*domain.ClientMetadata, 0)
 	for rows.Next() {
 		c, err := scanClient(rows)
 		if err != nil {

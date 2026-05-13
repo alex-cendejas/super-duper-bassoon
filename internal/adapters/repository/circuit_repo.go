@@ -40,7 +40,7 @@ func (r *SQLiteCircuitRepo) ListCircuitStates(ctx context.Context) ([]*domain.Wo
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*domain.WorkflowCircuitBreaker
+	out := make([]*domain.WorkflowCircuitBreaker, 0)
 	for rows.Next() {
 		s, err := scanCircuit(rows)
 		if err != nil {

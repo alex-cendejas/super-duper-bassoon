@@ -336,3 +336,100 @@ func TestResultRepo_SaveResult(t *testing.T) {
 		t.Error("status")
 	}
 }
+
+// TestNullSafeEmptyLists verifies that list functions return non-nil empty
+// slices (serialises as "[]" not "null" in JSON) when the table is empty.
+func TestNullSafeEmptyLists(t *testing.T) {
+	r := openTestDB(t)
+	ctx := context.Background()
+
+	t.Run("workflows", func(t *testing.T) {
+		got, err := r.Workflow().ListAllWorkflows(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got == nil {
+			t.Error("ListAllWorkflows returned nil, want empty slice")
+		}
+	})
+
+	t.Run("clients", func(t *testing.T) {
+		got, err := r.Client().ListClients(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got == nil {
+			t.Error("ListClients returned nil, want empty slice")
+		}
+	})
+
+	t.Run("runs_list_all", func(t *testing.T) {
+		got, err := r.Run().ListAllRuns(ctx, 50, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got == nil {
+			t.Error("ListAllRuns returned nil, want empty slice")
+		}
+	})
+
+	t.Run("runs_list_by_workflow", func(t *testing.T) {
+		got, err := r.Run().ListRuns(ctx, "nonexistent", 50)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got == nil {
+			t.Error("ListRuns returned nil, want empty slice")
+		}
+	})
+
+	t.Run("bans_list_all", func(t *testing.T) {
+		got, err := r.Ban().ListAllBans(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got == nil {
+			t.Error("ListAllBans returned nil, want empty slice")
+		}
+	})
+
+	t.Run("bans_get", func(t *testing.T) {
+		got, err := r.Ban().GetBans(ctx, "nonexistent")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got == nil {
+			t.Error("GetBans returned nil, want empty slice")
+		}
+	})
+
+	t.Run("run_health_list", func(t *testing.T) {
+		got, err := r.Health().ListRunHealths(ctx, "nonexistent", 10)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got == nil {
+			t.Error("ListRunHealths returned nil, want empty slice")
+		}
+	})
+
+	t.Run("workflow_type_health_list", func(t *testing.T) {
+		got, err := r.Health().ListAllWorkflowTypeHealths(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got == nil {
+			t.Error("ListAllWorkflowTypeHealths returned nil, want empty slice")
+		}
+	})
+
+	t.Run("circuit_states_list", func(t *testing.T) {
+		got, err := r.Circuit().ListCircuitStates(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got == nil {
+			t.Error("ListCircuitStates returned nil, want empty slice")
+		}
+	})
+}

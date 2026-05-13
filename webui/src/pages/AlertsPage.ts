@@ -54,7 +54,7 @@ export function AlertsPage(): HTMLElement {
           <tr>
             <td>${formatDate(alert.timestamp)}</td>
             <td>${alert.severity}</td>
-            <td>${alert.type}</td>
+            <td>${alert.kind}</td>
             <td>${alert.message.substring(0, 50)}...</td>
             <td>
               <button class="p-button p-button--base p-button--small detail-btn" data-id="${alert.id}">View</button>

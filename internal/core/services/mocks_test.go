@@ -221,6 +221,27 @@ func (m *memoryRunRepo) ListRunsByWorkflowType(ctx context.Context, workflowType
 	return out, nil
 }
 
+func (m *memoryRunRepo) ListAllRuns(ctx context.Context, limit, offset int) ([]*domain.Run, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	out := make([]*domain.Run, 0, len(m.runs))
+	for _, r := range m.runs {
+		cp := *r
+		out = append(out, &cp)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].TriggeredAt.After(out[j].TriggeredAt) })
+	if offset > 0 {
+		if offset >= len(out) {
+			return []*domain.Run{}, nil
+		}
+		out = out[offset:]
+	}
+	if limit > 0 && len(out) > limit {
+		out = out[:limit]
+	}
+	return out, nil
+}
+
 func (m *memoryRunRepo) GetPreviousRun(ctx context.Context, clientID, workflowType, currentRunID string, before time.Time) (*domain.Run, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

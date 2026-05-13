@@ -42,7 +42,7 @@ services:
       nats:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health/liveness 2>/dev/null || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health/readiness 2>/dev/null || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 10

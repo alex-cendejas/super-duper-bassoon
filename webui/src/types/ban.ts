@@ -1,9 +1,10 @@
 export interface BanRecord {
+  id: number;
   client_id: string;
   workflow_type: string;
   reason: BanReason;
   run_id_evidence: string;
-  result_evidence: Record<string, unknown>;
+  result_evidence: string;
   banned_at: string;
   banned_until?: string;
   active: boolean;

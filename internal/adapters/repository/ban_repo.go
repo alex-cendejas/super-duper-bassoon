@@ -83,7 +83,7 @@ func (r *SQLiteBanRepo) ListAllBans(ctx context.Context) ([]*domain.BanRecord, e
 }
 
 func collectBans(rows *sql.Rows) ([]*domain.BanRecord, error) {
-	var out []*domain.BanRecord
+	out := make([]*domain.BanRecord, 0)
 	for rows.Next() {
 		var b domain.BanRecord
 		var until sql.NullTime

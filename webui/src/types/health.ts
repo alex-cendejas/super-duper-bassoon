@@ -1,12 +1,12 @@
 export interface TypeHealth {
   workflow_type: string;
-  total_runs: number;
-  success_percentage: number;
-  fail_percentage: number;
-  error_percentage: number;
+  window_size: number;
+  runs_considered: number;
+  success_percentage_avg: number;
+  fail_percentage_avg: number;
+  error_percentage_avg: number;
   trend: HealthTrend;
-  circuit_broken: boolean;
-  last_run_at?: string;
+  calculated_at: string;
 }
 
 export type HealthTrend = 'improving' | 'degrading' | 'stable';
@@ -14,7 +14,9 @@ export type HealthTrend = 'improving' | 'degrading' | 'stable';
 export interface CircuitBreakerState {
   workflow_id: string;
   workflow_type: string;
-  active: boolean;
-  deactivated_reason?: string;
-  deactivated_at?: string;
+  state: 'closed' | 'open' | 'half_open';
+  opened_at?: string;
+  last_evaluated_at: string;
+  opened_reason?: string;
+  evaluation_count: number;
 }

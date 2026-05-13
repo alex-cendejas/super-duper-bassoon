@@ -18,6 +18,7 @@ import (
 type Deps struct {
 	API           *services.APIHandlerService
 	HealthRepo    ports.HealthRepository
+	Alerts        interface{ GetAlerts() []*domain.Alert }
 	NATSConnected func() bool
 	DBHealthy     func() bool
 	Logger        *log.Logger
@@ -60,6 +61,8 @@ func NewRouter(deps Deps) http.Handler {
 	r.Get("/circuits/{workflow_id}", h.getCircuitState)
 
 	r.Get("/status", h.systemStatus)
+
+	r.Get("/alerts", h.listAlerts)
 
 	return r
 }
@@ -355,4 +358,16 @@ func (h *handlers) systemStatus(w http.ResponseWriter, r *http.Request) {
 	natsOk := h.deps.NATSConnected == nil || h.deps.NATSConnected()
 	s := h.deps.API.SystemStatus(r.Context(), natsOk, dbOk)
 	h.writeJSON(w, http.StatusOK, s)
+}
+
+func (h *handlers) listAlerts(w http.ResponseWriter, r *http.Request) {
+	if h.deps.Alerts == nil {
+		h.writeJSON(w, http.StatusOK, map[string]interface{}{"items": []*domain.Alert{}, "total": 0})
+		return
+	}
+	alerts := h.deps.Alerts.GetAlerts()
+	if alerts == nil {
+		alerts = []*domain.Alert{}
+	}
+	h.writeJSON(w, http.StatusOK, map[string]interface{}{"items": alerts, "total": len(alerts)})
 }

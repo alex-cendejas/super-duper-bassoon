@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -104,10 +105,39 @@ func main() {
 	loopSvc := services.NewLoopDetectionService(registry.Run(), registry.Workflow(), registry.Ban(), banEnf, alerter, cfg.LoopThresholdMS, logger)
 
 	resultDispatcher := services.NewResultMessageDispatcher(logger)
+	clientRegSvc := services.NewClientRegistrationService(registry.Client(), logger)
+	resultDispatcher.RegisterHandler(clientRegSvc)
 	resultDispatcher.RegisterHandler(loopSvc)
 	resultDispatcher.RegisterHandler(healthSvc)
 	if resultCh != nil {
 		go resultDispatcher.Start(ctx, resultCh)
+	}
+
+	// Subscribe to client registrations from super-client
+	if natsConn != nil {
+		natsConn.Subscribe("client.register", func(msg *nats.Msg) {
+			var client domain.ClientMetadata
+			if err := json.Unmarshal(msg.Data, &client); err != nil {
+				logger.Printf("client.register: malformed message: %v", err)
+				return
+			}
+			if client.ClientID == "" {
+				return
+			}
+			if client.Labels == nil {
+				client.Labels = map[string]string{}
+			}
+			if client.InnerState == nil {
+				client.InnerState = map[string]interface{}{}
+			}
+			client.Active = true
+			client.LastSeenAt = time.Now().UTC()
+			if err := registry.Client().SaveClient(context.Background(), &client); err != nil {
+				logger.Printf("client.register: save client %s: %v", client.ClientID, err)
+			} else {
+				logger.Printf("client registered: %s", client.ClientID)
+			}
+		})
 	}
 
 	cronEval := trigger.NewCronEvaluator()
@@ -122,6 +152,7 @@ func main() {
 	router := httpserver.NewRouter(httpserver.Deps{
 		API:           apiSvc,
 		HealthRepo:    registry.Health(),
+		Alerts:        alerter,
 		NATSConnected: natsConnected,
 		DBHealthy:     dbHealthy,
 		Logger:        logger,

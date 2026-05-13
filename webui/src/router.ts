@@ -24,7 +24,9 @@ export class Router {
   }
 
   getCurrentPath(): string {
-    return window.location.hash || '#';
+    const hash = window.location.hash;
+    if (!hash || hash === '#') return '#/';
+    return hash;
   }
 
   getRoute(path: string): Route | undefined {

@@ -76,7 +76,7 @@ func (r *SQLiteWorkflowRepo) queryWorkflows(ctx context.Context, q string, args 
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*domain.Workflow
+	out := make([]*domain.Workflow, 0)
 	for rows.Next() {
 		w, err := scanWorkflow(rows)
 		if err != nil {

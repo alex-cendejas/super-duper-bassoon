@@ -3,7 +3,7 @@ import { runsAPI } from '@/api/runs';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { Pagination } from '@/components/common/Pagination';
-import { formatDate, formatPercentage } from '@/utils/format';
+import { formatDate } from '@/utils/format';
 
 export function RunsPage(): HTMLElement {
   const page = document.createElement('div');
@@ -39,7 +39,7 @@ export function RunsPage(): HTMLElement {
           <th>Workflow</th>
           <th>Triggered</th>
           <th>State</th>
-          <th>Success %</th>
+          <th>Clients</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -48,13 +48,13 @@ export function RunsPage(): HTMLElement {
           .map(
             (run) => `
           <tr>
-            <td class="run-id">${run.id}</td>
+            <td class="run-id">${run.run_id}</td>
             <td>${run.workflow_type}</td>
             <td>${formatDate(run.triggered_at)}</td>
             <td><span class="p-badge">${run.state}</span></td>
-            <td>${formatPercentage(run.health.success_percentage)}</td>
+            <td>${(run.participating_clients ?? []).length}</td>
             <td>
-              <button class="p-button p-button--base p-button--small details-btn" data-id="${run.id}">Details</button>
+              <button class="p-button p-button--base p-button--small details-btn" data-id="${run.run_id}">Details</button>
             </td>
           </tr>
         `

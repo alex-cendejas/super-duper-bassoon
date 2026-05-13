@@ -18,7 +18,9 @@ export const runsAPI = {
       if (filters.offset) params.append('offset', filters.offset.toString());
     }
     const queryStr = params.toString();
-    return apiClient.get(`/runs${queryStr ? `?${queryStr}` : ''}`);
+    return apiClient
+      .get<{ items: Run[]; total: number }>(`/runs${queryStr ? `?${queryStr}` : ''}`)
+      .then((r) => ({ items: r.items ?? [], total: r.total ?? 0 }));
   },
 
   get(id: string): Promise<Run> {
@@ -26,7 +28,7 @@ export const runsAPI = {
   },
 
   getResults(id: string): Promise<RunResult[]> {
-    return apiClient.get(`/runs/${id}/results`);
+    return apiClient.get<{ items: RunResult[] }>(`/runs/${id}/results`).then((r) => r.items ?? []);
   },
 
   getByWorkflow(workflowId: string): Promise<Run[]> {
