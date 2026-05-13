@@ -1,0 +1,7 @@
+.git
+.claude
+webui/node_modules
+webui/dist
+webui/.vite
+data/
+*.db

@@ -1,0 +1,79 @@
+services:
+
+  # ── NATS messaging broker ────────────────────────────────────────────────────
+  nats:
+    image: nats:2-alpine
+    command: ["-m", "8222"]          # enable monitoring endpoint for health check
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8222/healthz 2>/dev/null || exit 1"]
+      interval: 3s
+      timeout: 2s
+      retries: 10
+      start_period: 2s
+
+  # ── Automation engine (Go server + REST API) ─────────────────────────────────
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    restart: unless-stopped
+    environment:
+      NATS_URL:                          nats://nats:4222
+      DB_PATH:                           /data/server.db
+      HTTP_HOST:                         "0.0.0.0"
+      HTTP_PORT:                         "8080"
+      LOG_LEVEL:                         info
+      # Trigger / scheduling
+      TRIGGER_CHECK_INTERVAL_MS:         "5000"
+      # Health monitoring
+      HEALTH_AGGREGATION_INTERVAL_MS:    "5000"
+      HEALTH_WINDOW_SIZE:                "10"
+      HEALTH_SUCCESS_THRESHOLD:          "70"
+      # Circuit breaker
+      CIRCUIT_BREAKER_CHECK_INTERVAL_MS: "10000"
+      CIRCUIT_BREAKER_SUCCESS_THRESHOLD: "70"
+      CIRCUIT_BREAKER_COOLDOWN_MS:       "60000"
+      # Loop detection
+      LOOP_THRESHOLD_MS:                 "5000"
+    volumes:
+      - server-data:/data
+    depends_on:
+      nats:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health/liveness 2>/dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  # ── Toy client pool (20 simulated inner clients) ─────────────────────────────
+  super-client:
+    build:
+      context: .
+      dockerfile: Dockerfile.superclient
+    restart: unless-stopped
+    environment:
+      NATS_URL:      nats://nats:4222
+      POOL_SIZE:     "20"
+      CLIENT_PREFIX: client
+      LOG_LEVEL:     info
+    depends_on:
+      server:
+        condition: service_healthy
+
+  # ── Web dashboard (nginx serving the built Vite SPA) ─────────────────────────
+  webui:
+    build:
+      context: .
+      dockerfile: Dockerfile.webui
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      server:
+        condition: service_healthy
+
+volumes:
+  server-data:    # persists the SQLite database across restarts
