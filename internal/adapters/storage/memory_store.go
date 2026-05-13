@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/super-client/internal/core/domain"
+	"github.com/super-duper-bassoon/internal/core/domain"
 )
 
 // MemoryStore is an in-memory implementation of ports.StateStore.
@@ -24,7 +24,7 @@ func (s *MemoryStore) GetState(_ context.Context, clientID string) (*domain.Clie
 	defer s.mu.RUnlock()
 	st, ok := s.states[clientID]
 	if !ok {
-		return nil, fmt.Errorf("%w: %s", domain.ErrClientNotFound, clientID)
+		return nil, fmt.Errorf("%w: %s", domain.ErrInnerClientNotFound, clientID)
 	}
 	clone := st.Clone()
 	return &clone, nil

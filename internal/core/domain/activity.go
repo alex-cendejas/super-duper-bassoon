@@ -31,9 +31,23 @@ type Activity struct {
 }
 
 // IsValid returns true if the activity type is recognized.
-func (a Activity) IsValid() bool {
-	_, ok := ValidActivityTypes[a.Type]
+func (a ActivityType) IsValid() bool {
+	_, ok := ValidActivityTypes[a]
 	return ok
+}
+
+// IsValid returns true if the activity's type is recognized.
+func (a Activity) IsValid() bool {
+	return a.Type.IsValid()
+}
+
+// IsValid returns true if the result status is a known value.
+func (s ResultStatus) IsValid() bool {
+	switch s {
+	case ResultSuccess, ResultFail, ResultError:
+		return true
+	}
+	return false
 }
 
 // ResultStatus enumerates possible activity result statuses.

@@ -3,7 +3,7 @@ package domain_test
 import (
 	"testing"
 
-	"github.com/super-client/internal/core/domain"
+	"github.com/super-duper-bassoon/internal/core/domain"
 )
 
 // deterministicChaos is a controllable ChaosSource for testing.

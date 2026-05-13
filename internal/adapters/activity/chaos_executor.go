@@ -4,8 +4,8 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/super-client/internal/core/domain"
-	"github.com/super-client/internal/core/ports"
+	"github.com/super-duper-bassoon/internal/core/domain"
+	"github.com/super-duper-bassoon/internal/core/ports"
 )
 
 // ChaosExecutor wraps an ActivityExecutor and injects chaos behavior.

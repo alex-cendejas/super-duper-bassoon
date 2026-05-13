@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/super-client/internal/core/domain"
+	"github.com/super-duper-bassoon/internal/core/domain"
 )
 
 // StandardExecutor executes activities deterministically (no chaos).

@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/super-client/internal/app"
+	"github.com/super-duper-bassoon/internal/app"
 )
 
 func main() {

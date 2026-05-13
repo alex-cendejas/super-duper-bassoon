@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/super-client/internal/adapters/activity"
-	"github.com/super-client/internal/core/domain"
+	"github.com/super-duper-bassoon/internal/adapters/activity"
+	"github.com/super-duper-bassoon/internal/core/domain"
 )
 
 func baseState() domain.ClientState {

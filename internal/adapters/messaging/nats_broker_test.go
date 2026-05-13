@@ -10,8 +10,8 @@ import (
 
 	natsserver "github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
-	"github.com/super-client/internal/adapters/messaging"
-	"github.com/super-client/internal/core/domain"
+	"github.com/super-duper-bassoon/internal/adapters/messaging"
+	"github.com/super-duper-bassoon/internal/core/domain"
 )
 
 func testLogger() *slog.Logger {

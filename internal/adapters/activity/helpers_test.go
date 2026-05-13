@@ -5,7 +5,7 @@ import (
 	"os"
 	"sync/atomic"
 
-	"github.com/super-client/internal/core/domain"
+	"github.com/super-duper-bassoon/internal/core/domain"
 )
 
 func testLogger() *slog.Logger {

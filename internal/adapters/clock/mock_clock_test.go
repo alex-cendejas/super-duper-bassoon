@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/super-client/internal/adapters/clock"
+	"github.com/super-duper-bassoon/internal/adapters/clock"
 )
 
 func TestMockClock_Now(t *testing.T) {

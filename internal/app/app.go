@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/super-client/internal/adapters/activity"
-	"github.com/super-client/internal/adapters/clock"
-	"github.com/super-client/internal/adapters/messaging"
-	"github.com/super-client/internal/adapters/storage"
-	"github.com/super-client/internal/core/domain"
-	"github.com/super-client/internal/core/services"
+	"github.com/super-duper-bassoon/internal/adapters/activity"
+	"github.com/super-duper-bassoon/internal/adapters/clock"
+	"github.com/super-duper-bassoon/internal/adapters/messaging"
+	"github.com/super-duper-bassoon/internal/adapters/storage"
+	"github.com/super-duper-bassoon/internal/core/domain"
+	"github.com/super-duper-bassoon/internal/core/services"
 )
 
 // Config holds all runtime configuration for the super-client application.

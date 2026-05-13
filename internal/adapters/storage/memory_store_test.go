@@ -6,8 +6,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/super-client/internal/adapters/storage"
-	"github.com/super-client/internal/core/domain"
+	"github.com/super-duper-bassoon/internal/adapters/storage"
+	"github.com/super-duper-bassoon/internal/core/domain"
 )
 
 func sampleState(version int) *domain.ClientState {
@@ -24,8 +24,8 @@ func TestMemoryStore_GetState_NotFound(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for nonexistent client")
 	}
-	if !errors.Is(err, domain.ErrClientNotFound) {
-		t.Errorf("expected ErrClientNotFound, got %v", err)
+	if !errors.Is(err, domain.ErrInnerClientNotFound) {
+		t.Errorf("expected ErrInnerClientNotFound, got %v", err)
 	}
 }
 

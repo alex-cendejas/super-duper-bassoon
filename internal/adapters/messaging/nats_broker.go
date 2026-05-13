@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/nats-io/nats.go"
-	"github.com/super-client/internal/core/domain"
+	"github.com/super-duper-bassoon/internal/core/domain"
 )
 
 const (

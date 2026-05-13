@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/super-client/internal/core/domain"
-	"github.com/super-client/internal/core/ports"
+	"github.com/super-duper-bassoon/internal/core/domain"
+	"github.com/super-duper-bassoon/internal/core/ports"
 )
 
 // DispatchHandler validates and routes incoming dispatch messages to the

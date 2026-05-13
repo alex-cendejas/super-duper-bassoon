@@ -3,7 +3,7 @@ package ports
 import (
 	"context"
 
-	"github.com/super-client/internal/core/domain"
+	"github.com/super-duper-bassoon/internal/core/domain"
 )
 
 // StateStore abstracts state persistence for inner clients.

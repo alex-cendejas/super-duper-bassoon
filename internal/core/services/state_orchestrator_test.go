@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/super-client/internal/adapters/clock"
-	"github.com/super-client/internal/core/domain"
-	"github.com/super-client/internal/core/services"
+	"github.com/super-duper-bassoon/internal/adapters/clock"
+	"github.com/super-duper-bassoon/internal/core/domain"
+	"github.com/super-duper-bassoon/internal/core/services"
 )
 
 func TestStateOrchestrator_ApplyActivityResult(t *testing.T) {

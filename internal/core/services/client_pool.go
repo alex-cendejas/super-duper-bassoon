@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/super-client/internal/core/domain"
-	"github.com/super-client/internal/core/ports"
+	"github.com/super-duper-bassoon/internal/core/domain"
+	"github.com/super-duper-bassoon/internal/core/ports"
 )
 
 // ClientPoolManager manages the lifecycle and dispatch routing for all inner

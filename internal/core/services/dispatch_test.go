@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/super-client/internal/core/domain"
-	"github.com/super-client/internal/core/services"
+	"github.com/super-duper-bassoon/internal/core/domain"
+	"github.com/super-duper-bassoon/internal/core/services"
 )
 
 func seedStore(store *MockStateStore, clientID string) {
