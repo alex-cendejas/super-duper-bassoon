@@ -32,6 +32,7 @@ type RunRepository interface {
 	GetRun(ctx context.Context, runID string) (*domain.Run, error)
 	UpdateRun(ctx context.Context, r *domain.Run) error
 	ListRuns(ctx context.Context, workflowID string, limit int) ([]*domain.Run, error)
+	ListAllRuns(ctx context.Context, limit, offset int) ([]*domain.Run, error)
 	ListRunsByWorkflowType(ctx context.Context, workflowType string, limit int) ([]*domain.Run, error)
 	GetPreviousRun(ctx context.Context, clientID, workflowType, currentRunID string, before time.Time) (*domain.Run, error)
 }

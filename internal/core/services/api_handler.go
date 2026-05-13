@@ -93,6 +93,10 @@ func (a *APIHandlerService) ListRuns(ctx context.Context, workflowID string, lim
 	return a.runs.ListRuns(ctx, workflowID, limit)
 }
 
+func (a *APIHandlerService) ListAllRuns(ctx context.Context, limit, offset int) ([]*domain.Run, error) {
+	return a.runs.ListAllRuns(ctx, limit, offset)
+}
+
 func (a *APIHandlerService) GetRunResults(ctx context.Context, runID string) ([]*domain.Result, error) {
 	return a.results.GetRunResults(ctx, runID)
 }

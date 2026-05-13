@@ -3,6 +3,6 @@ import type { SystemStatus } from '@/types';
 
 export const systemAPI = {
   getStatus(): Promise<SystemStatus> {
-    return apiClient.get('/system/status');
+    return apiClient.get('/status');
   },
 };

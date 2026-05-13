@@ -9,8 +9,7 @@ export interface BanFilters {
 
 export const bansAPI = {
   getAll(_filters?: BanFilters): Promise<BanRecord[]> {
-    // TODO: implement filtering when API supports it
-    return apiClient.get('/bans');
+    return apiClient.get<{ items: BanRecord[] }>('/bans').then((r) => r.items);
   },
 
   get(clientId: string): Promise<BanRecord[]> {

@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { Run, RunResult, PaginatedResponse } from '@/types';
+import type { Run, RunResult } from '@/types';
 
 export interface RunFilters {
   workflow_type?: string;
@@ -9,7 +9,7 @@ export interface RunFilters {
 }
 
 export const runsAPI = {
-  getAll(filters?: RunFilters): Promise<PaginatedResponse<Run>> {
+  getAll(filters?: RunFilters): Promise<{ items: Run[]; total: number }> {
     const params = new URLSearchParams();
     if (filters) {
       if (filters.workflow_type) params.append('workflow_type', filters.workflow_type);

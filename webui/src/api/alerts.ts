@@ -1,5 +1,4 @@
-import { apiClient } from './client';
-import type { Alert, PaginatedResponse } from '@/types';
+import type { Alert } from '@/types';
 
 export interface AlertFilters {
   severity?: string;
@@ -10,20 +9,11 @@ export interface AlertFilters {
 }
 
 export const alertsAPI = {
-  getAll(filters?: AlertFilters): Promise<PaginatedResponse<Alert>> {
-    const params = new URLSearchParams();
-    if (filters) {
-      if (filters.severity) params.append('severity', filters.severity);
-      if (filters.type) params.append('type', filters.type);
-      if (filters.workflow) params.append('workflow', filters.workflow);
-      if (filters.limit) params.append('limit', filters.limit.toString());
-      if (filters.offset) params.append('offset', filters.offset.toString());
-    }
-    const queryStr = params.toString();
-    return apiClient.get(`/alerts${queryStr ? `?${queryStr}` : ''}`);
+  getAll(_filters?: AlertFilters): Promise<{ items: Alert[]; total: number }> {
+    return Promise.resolve({ items: [], total: 0 });
   },
 
-  get(id: string): Promise<Alert> {
-    return apiClient.get(`/alerts/${id}`);
+  get(_id: string): Promise<Alert> {
+    return Promise.reject(new Error('Not implemented'));
   },
 };

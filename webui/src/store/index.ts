@@ -6,7 +6,6 @@ import type {
   BanRecord,
   Alert,
   SystemStatus,
-  PaginatedResponse,
 } from '@/types';
 
 export interface AppState {
@@ -100,12 +99,10 @@ export class Store {
     this.setState('workflows', { loading, error });
   }
 
-  setRuns(response: PaginatedResponse<Run>): void {
+  setRuns(response: { items: Run[]; total: number }): void {
     this.setState('runs', {
       items: response.items,
       total: response.total,
-      page: response.page,
-      limit: response.limit,
       loading: false,
     });
   }
@@ -138,12 +135,10 @@ export class Store {
     this.setState('bans', { loading, error });
   }
 
-  setAlerts(response: PaginatedResponse<Alert>): void {
+  setAlerts(response: { items: Alert[]; total: number }): void {
     this.setState('alerts', {
       items: response.items,
       total: response.total,
-      page: response.page,
-      limit: response.limit,
       loading: false,
     });
   }

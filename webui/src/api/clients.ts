@@ -9,8 +9,7 @@ export interface ClientFilters {
 
 export const clientsAPI = {
   getAll(_filters?: ClientFilters): Promise<ClientMetadata[]> {
-    // TODO: implement filtering when API supports it
-    return apiClient.get('/clients');
+    return apiClient.get<{ items: ClientMetadata[] }>('/clients').then((r) => r.items);
   },
 
   get(id: string): Promise<ClientMetadata> {

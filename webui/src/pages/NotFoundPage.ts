@@ -13,7 +13,7 @@ export function NotFoundPage(): HTMLElement {
 
   const btn = page.querySelector('#go-home') as HTMLButtonElement;
   btn.addEventListener('click', () => {
-    router.navigate('/#/workflows');
+    router.navigate('#/workflows');
   });
 
   return page;

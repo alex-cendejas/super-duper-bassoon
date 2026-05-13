@@ -34,15 +34,12 @@ function renderPage() {
   if (!app) return;
 
   const path = router.getCurrentPath();
-  store.setCurrentPage(path);
-
   const pageComponent = getCurrentPageComponent(path);
   const layoutComponent = MainLayout(pageComponent);
 
   app.innerHTML = '';
   app.appendChild(layoutComponent);
 
-  // Add toast notification if needed
   if (store.state.ui.toastMessage) {
     const toast = document.createElement('div');
     toast.className = `p-notification p-notification--${store.state.ui.toastType || 'info'}`;
@@ -52,11 +49,8 @@ function renderPage() {
 }
 
 export function initApp() {
-  router.subscribe(() => {
-    renderPage();
-  });
-
-  store.subscribe(() => {
+  router.subscribe((path) => {
+    store.setCurrentPage(path);
     renderPage();
   });
 

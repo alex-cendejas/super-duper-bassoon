@@ -43,6 +43,7 @@ func NewRouter(deps Deps) http.Handler {
 	r.Get("/clients", h.listClients)
 	r.Get("/clients/{id}", h.getClient)
 
+	r.Get("/runs", h.listAllRuns)
 	r.Get("/runs/{id}", h.getRun)
 	r.Get("/runs/{id}/results", h.getRunResults)
 
@@ -195,6 +196,20 @@ func (h *handlers) deactivateWorkflow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.writeJSON(w, http.StatusOK, wf)
+}
+
+func (h *handlers) listAllRuns(w http.ResponseWriter, r *http.Request) {
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	if limit <= 0 {
+		limit = 50
+	}
+	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
+	runs, err := h.deps.API.ListAllRuns(r.Context(), limit, offset)
+	if err != nil {
+		h.writeError(w, err)
+		return
+	}
+	h.writeJSON(w, http.StatusOK, map[string]interface{}{"items": runs, "total": len(runs)})
 }
 
 func (h *handlers) listRuns(w http.ResponseWriter, r *http.Request) {

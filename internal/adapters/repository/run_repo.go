@@ -69,6 +69,21 @@ func (r *SQLiteRunRepo) ListRuns(ctx context.Context, workflowID string, limit i
 	return collectRuns(rows)
 }
 
+func (r *SQLiteRunRepo) ListAllRuns(ctx context.Context, limit, offset int) ([]*domain.Run, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	rows, err := r.db.QueryContext(ctx, `SELECT run_id,workflow_id,workflow_type,triggered_at,dispatched_at,state,reason,participating_clients_json FROM runs ORDER BY triggered_at DESC LIMIT ? OFFSET ?`, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return collectRuns(rows)
+}
+
 func (r *SQLiteRunRepo) ListRunsByWorkflowType(ctx context.Context, workflowType string, limit int) ([]*domain.Run, error) {
 	if limit <= 0 {
 		limit = 100
